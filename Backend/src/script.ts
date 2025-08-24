@@ -1,37 +1,24 @@
-import express from 'express';
-import http from 'http'
-import cors from 'cors'
-import dotenv from 'dotenv'
-import { WebSocket , WebSocketServer } from "ws";
+import { WebSocketServer } from "ws";
 
-dotenv.config();
-const app=express();
-const server = http.createServer(app)
-const wss = new WebSocketServer({ server });
+const wss = new WebSocketServer({ port: 4000 });
 
-app.use(cors());
-app.use(express.json());
+console.log("server is running on port 4000");
 
-//create a new websocket connection
-wss.on("connection",(ws:WebSocket)=>{
-    console.log("New Client connected");
+wss.on("connection", (ws) => {
+  console.log("New Client connected");
 
-    ws.on("message",(data)=>{
-        console.log("Recevied a message from the client: "+data);
-        wss.clients.forEach((client)=>{
-            if(client !== ws && client.readyState == WebSocket.OPEN){
-                client.send(data);
-            }
-        });
-    });
+  ws.on("message", (message) => {
+    console.log("Received a message from the client:", message.toString());
 
-    ws.on("close",()=>{
-        console.log("Client disconnected");
-    })
-})
+    // ✅ Send the message back to the same client
+    ws.send(`Server reply: ${message}`);
+  });
 
-const PORT = process.env.PORT;
+  ws.on("close", () => {
+    console.log("Client disconnected");
+  });
 
-server.listen(PORT,()=>{
-    console.log(`server is running on port ${PORT}`);
-})
+  ws.on("error", (err) => {
+    console.error("Socket error:", err);
+  });
+});
